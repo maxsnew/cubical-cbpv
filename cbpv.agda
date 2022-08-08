@@ -4,8 +4,12 @@ open import Cubical.Foundations.Prelude
 
 open import Cubical.Foundations.HLevels
 open import Cubical.Categories.Category
+open import Cubical.Categories.Adjoint
 open import Cubical.Categories.Functor
 open import Cubical.Categories.Instances.Sets
+open import Cubical.Categories.NaturalTransformation
+
+open import RelativeAdjoint
 
 private
   variable
@@ -68,7 +72,15 @@ record CBPV ℓ ℓ' : Type (ℓ-suc (ℓ-max ℓ ℓ')) where
   -- First, a thunk type U should be a factorization of 𝕋 through 𝕍
   field
     U-Functor : Functor ℂ 𝕍
-    U-UMP : funcComp i U-Functor ≡ 𝕋 -- I'm assuming this will mean natural iso?
+    U-UMP : NatIso (funcComp i U-Functor) 𝕋 -- I'm assuming this will mean natural iso?
+    -- Val (U B) ≡ Comp B
+
+    -- Conjecture, this should imply the following relative right
+    -- adjoint:
+    -- 
+    -- i : 𝕍 → SET
+    -- 𝕍(A, U B) ≡ SET(i A, 𝕋 B)
+    -- so U is a right-adjoint to i relative to 𝕋
 
   -- The action of the functor on objects is the type
   U : CTy → VTy
@@ -76,20 +88,36 @@ record CBPV ℓ ℓ' : Type (ℓ-suc (ℓ-max ℓ ℓ')) where
 
   -- and the thunk/force are the components of the natural isomorphism
   thunk : ∀ {B} → Comp B → Val (U B)
-  thunk = {!!}
+  thunk {B} = isIso.inv (NatIso.nIso U-UMP B)
 
   force : ∀ {B} → Val (U B) → Comp B
-  force = {!!}
+  force {B} = NatTrans.N-ob (NatIso.trans U-UMP) B
 
   -- The F type is a left adjoint to 𝕋, relative to the inclusion i
   field
     F-Functor : Functor 𝕍 ℂ
+    F-UMP : RelLeftAdjoint i F-Functor 𝕋
     -- Stk (F A) B =~ Val A -> Comp B
 
-  -- TODO: more F stuff
+  F : VTy → CTy
+  F = Functor.F-ob F-Functor
+
+  ret : ∀ {A} → Val A → Comp (F A)
+  ret = {!!}
+
+  bind : ∀ {A B} → (Val A → Comp B) → Stk (F A) B
+  bind = {!!}
+
+  -- If U is a relative *right* adjoint as above, then we can show
+  -- that F -| U
+  
+  -- ℂ (F A) B ≡ SET(i A, 𝕋 B)
+  --           ≡ 𝕍(A, U B)
+  adjoint : NaturalBijection._⊣_ F-Functor U-Functor
+  adjoint = {!!}
 
   -- The CBPV function type says that ℂ has *𝕍-powers*
-  -- and that 𝕋 *preserves* 𝕍-powers
+  -- and that 𝕋 *preserves* 𝕍-powers (I.e., note already that SET has 𝕍-powers)
   field
     _⟶_ : VTy → CTy → CTy
     -- ℂ has *𝕍-powers*:        Stk B' (A ⟶ B) ≡ Val A → Stk B' B
