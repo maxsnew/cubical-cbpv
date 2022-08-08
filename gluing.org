@@ -1,0 +1,38 @@
+* Synthetic Tait Computability for CBPV
+
+We should be able to use this idea of an internal CBPV model to
+construct a synthetic LR proof for CBPV.
+
+Given a syntactic CBPV model
+- M : ¶ => CBPV T
+we construct a new model
+- M* : { CBPV T | ¶ ↪ M } (increasing the universe probably)
+  
+The value type interpretation would be the same as the ordinary Tait
+computability proof
+
+VTy* = { ¶ ↪ A : VTy | { Set | ¶ ↪ el A } }
+el* A = pi2 A
+
+Next, the computation type category is the category of T-algebras
+*over* computation types modulo 𝕋:
+
+Ob ℂ* = { ¶ ↪ B : Ob ℂ | { Ob ALG | ¶ ↪ 𝕋 B } }
+Mor ℂ* B B' = { ¶ ↪ S : Mor ℂ B B' | { Mor ALG (𝕋 B) (𝕋 B') | ¶ ↪ 𝕋 S } }
+
+Ob  𝕋* B = pi2 B
+Mor 𝕋* S = pi2 S
+
+Ob U* B = [ ¶ ↪ U B | [ ¶ ↪ v : U B | { Forget (𝕋* B) | ¶ ↪ force v } ] ]
+U-UMP* : 𝕍* A (U* B) ≡ SET (el* A) (Forget (𝕋* B))
+TODO: proof of UMP
+
+
+Ob F* A = [ ¶ ↪ F A | ALG<Carrier = ??,
+                          ϕ = ? > ]
+F-UMP* : ℂ* (F* A) B ≡ ALG (Free (el* A)) (𝕋* B)
+
+-- Intuitively, if T is the free monad presented by a signature Σ
+-- the computability structure for F A
+-- would be an inductively defined datatype
+
