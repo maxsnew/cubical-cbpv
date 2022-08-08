@@ -18,6 +18,19 @@ private
 -- The following is a definition of a model of CBPV internal to a
 -- ∞?-topos.
 
+-- The judgmental structure is given by
+-- 1. Value category is just a sub-category of SET (i.e., a universe)
+-- 2. Computation category is a category with a functor to ALG (should it be a sub-category?)
+-- Free ⊣ Forget : SET → ALG
+-- i : 𝕍 → SET
+-- 𝕋 : ℂ → ALG
+
+-- So we get
+-- U : ℂ → 𝕍
+--   𝕍 A (U B) ≡ SET (i A) (Forget (𝕋 B)) ≡ ALG (Free (i A)) (𝕋 B)
+-- F : 𝕍 → ℂ
+     ℂ (F A) B ≡ ALG (Free (i A)) (𝕋 B) ≡ SET (i A) (Forget (𝕋 B))
+
 -- By a sheaf construction every model of CBPV embeds into one of this form.
 -- We can use the notion of model itself as a kind of HOAS for CBPV.
 record CBPV ℓ ℓ' : Type (ℓ-suc (ℓ-max ℓ ℓ')) where
@@ -117,13 +130,17 @@ record CBPV ℓ ℓ' : Type (ℓ-suc (ℓ-max ℓ ℓ')) where
   adjoint = {!!}
 
   -- The CBPV function type says that ℂ has *𝕍-powers*
-  -- and that 𝕋 *preserves* 𝕍-powers (I.e., note already that SET has 𝕍-powers)
+  -- and that 𝕋 *preserves* 𝕍-powers (note already that SET has 𝕍-powers)
   field
-    _⟶_ : VTy → CTy → CTy
+    -- ℂ has 𝕍-powers
     -- ℂ has *𝕍-powers*:        Stk B' (A ⟶ B) ≡ Val A → Stk B' B
+    --                          ℂ B' (B ^ A) ≡ SET (i A) (ℂ B' B)
     -- 𝕋 *preserves* 𝕍-powers?: Comp (A ⟶ B) ≡ Val A → Comp B
+    --                          𝕋 (B ^ A) ≡ SET (i A) (𝕋 B)
+    --                          SET X (𝕋 (B ^ A)) ≡ SET (X × A) (𝕋 B)
 
   -- Value products: 𝕍 has products and i preserves them
+  
   -- Value coproducts: 𝕍 has coproducts and i preserves them
   -- Computation products: ℂ has products and 𝕋 preserves them
 
@@ -132,11 +149,13 @@ record CBPV ℓ ℓ' : Type (ℓ-suc (ℓ-max ℓ ℓ')) where
   field
     _⊸_ : CTy → CTy → VTy
     -- Val (B ⊸ B') ≡ Stk B B'
+    -- i (B ⊸ B') ≡ ℂ B B'
 
   -- Tensor product says that ℂ has 𝕍-tensors
   field
     _⊘_ : VTy → CTy → CTy
-    -- Stk (A ⊘ B) B' ≡ A → Stk B B'
+    -- Stk (A ⊘ B) B' ≡ Val A → Stk B B'
+    -- ℂ (A ⊘ B) B' ≡ SET (i A) (ℂ B B')
 
   -- A *world* type is one that represents 𝕋
   field
