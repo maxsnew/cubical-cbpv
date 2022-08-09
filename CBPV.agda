@@ -1,12 +1,13 @@
-{-# OPTIONS --cubical #-}
+{-# OPTIONS --cubical --experimental-lossy-unification #-}
 
 module CBPV  where
 
 open import Cubical.Foundations.Prelude
-
+open import Cubical.Foundations.Isomorphism
 open import Cubical.Foundations.HLevels
-open import Cubical.Categories.Category
 open import Cubical.Categories.Adjoint
+open import Cubical.Categories.Category
+open import Cubical.Categories.Constructions.BinProduct
 open import Cubical.Categories.Instances.EilenbergMoore
 open import Cubical.Categories.Functor
 open import Cubical.Categories.Instances.Sets
@@ -22,30 +23,22 @@ open import RelativeAdjoint
 -- The following is a definition of a model of CBPV internal to a
 -- ∞?-topos.
 
--- The judgmental structure is given by
--- 1. Value category is just a sub-category of SET (i.e., a universe)
--- 2. Computation category is a category with a functor to ALG (should it be a sub-category?)
--- Free ⊣ Forget : SET → ALG
--- i : 𝕍 → SET
--- 𝕋 : ℂ → ALG
-
--- So we get
--- U : ℂ → 𝕍
---   𝕍 A (U B) ≡ SET (i A) (Forget (𝕋 B)) ≡ ALG (Free (i A)) (𝕋 B)
--- F : 𝕍 → ℂ
---   ℂ (F A) B ≡ ALG (Free (i A)) (𝕋 B) ≡ SET (i A) (Forget (𝕋 B))
-
 -- By a sheaf construction every model of CBPV embeds into one of this form.
 -- We can use the notion of model itself as a kind of HOAS for CBPV.
-record CBPV ℓ ℓ' (T : Monad (SET ℓ)) : Type (ℓ-suc (ℓ-max ℓ ℓ')) where
+
+-- The construction is parameterized by a monad T on SET that
+-- specifies the "built-in" notion of effects. For certain proofs (LR)
+-- we probably want to require that this is the monad for some
+-- algebraic theory. (Classically, a finitary monad).
+record CBPV ℓ ℓ' (T : Monad (SET ℓ')) : Type (ℓ-suc (ℓ-max ℓ ℓ')) where
   -- First, for the judgmental structure of values we just need a
   -- universe of sets that we call value types
   field
     VTy : Type ℓ
-    el : VTy -> hSet ℓ
+    el : VTy -> hSet ℓ'
 
-  -- This presents a subcategory of the category of hSets (I copied the definition)
-  𝕍 : Category ℓ ℓ
+  -- This presents a full subcategory of the category of SET (I copied the definition)
+  𝕍 : Category ℓ ℓ'
   𝕍 = record
         { ob = VTy
         ; Hom[_,_] = λ A A' → fst (el A) → fst (el A')
@@ -56,99 +49,113 @@ record CBPV ℓ ℓ' (T : Monad (SET ℓ)) : Type (ℓ-suc (ℓ-max ℓ ℓ')) w
         ; ⋆Assoc = λ f g h → refl
         ; isSetHom = λ {A} {A'} → isSetΠ ((λ _ → snd (el A')))
         }
-
-  i : Functor 𝕍 (SET ℓ)
+  
+  i : Functor 𝕍 (SET ℓ')
   i = record { F-ob = el ; F-hom = λ z → z ; F-id = refl ; F-seq = λ f g → refl  }
 
-  Val : VTy -> Type ℓ
+  Val : VTy -> Type ℓ'
   Val A = fst (el A)
+
   -- We can then extremely tersely define the structure needed for
   -- computation types by specifying that we have a category of
   -- computations equipped with a functor to the category of algebras of the monad
-  
-  ALG : Category (ℓ-suc ℓ) ℓ
+  ALG : Category (ℓ-suc ℓ') ℓ'
   ALG = EMCategory T
   field
     ℂ : Category ℓ ℓ'
     𝕋 : Functor ℂ ALG
     
-  -- module ℂ = Category(ℂ)
-  -- -- The objects of the computation category are the computation types.
-  -- CTy = ℂ.ob
+  module ℂ = Category(ℂ)
+  -- The objects of the computation category are the computation types.
+  CTy = ℂ.ob
   
-  -- -- The morphisms are the *stacks* aka *linear* morphisms
-  -- Stk : CTy → CTy → Type ℓ'
-  -- Stk B B' = ℂ.Hom[ B , B' ]
+  -- The morphisms are the *stacks* aka *linear* morphisms
+  Stk : CTy → CTy → Type ℓ'
+  Stk B B' = ℂ.Hom[ B , B' ]
 
   -- Composing the  action of the functor on objects gives us the set of terms.
-  -- Comp : CTy → Type ℓ
-  -- Comp B = fst (Functor.F-ob (funcComp (ForgetEMAlgebra T) 𝕋) B)
+  Comp : CTy → Type ℓ'
+  Comp B = fst (Functor.F-ob (funcComp (ForgetEMAlgebra T) 𝕋) B)
 
   -- The action of the functor on morphisms gives us the "pile" of a
   -- stack onto a term (with its assoc/unit)
-  -- _[_] : ∀ {B B'} → Stk B B' → Comp B → Comp B'
-  -- S [ M ] = Functor.F-hom (funcComp (ForgetEMAlgebra T) 𝕋) S M
+  _[_] : ∀ {B B'} → Stk B B' → Comp B → Comp B'
+  S [ M ] = Functor.F-hom (funcComp (ForgetEMAlgebra T) 𝕋) S M
 
   -- Now we can model the type structure by certain UMPs
-  -- First, a thunk type U should be a factorization of 𝕋 through 𝕍
+
+  -- First, a thunk type U can be defined as a right adjoint to i,
+  -- relative to the functor (Forget ∘ 𝕋) : ℂ → SET
   field
     U-Functor : Functor ℂ 𝕍
-    U-UMP : RelRightAdjoint (funcComp (ForgetEMAlgebra T) 𝕋) i U-Functor
+    -- 𝕍(A, U B) ≡ SET(i A, Forget (𝕋 B))
+    U-UMP : (RelRightAdjoint (funcComp (ForgetEMAlgebra T) 𝕋) i U-Functor)
 
-    -- NatIso (funcComp i U-Functor) (funcComp (ForgetEMAlgebra T) 𝕋)
+    -- Under very mild conditions about what other connectives we
+    -- support, this is equivalent to a natural isomorphism
     -- Val (U B) ≡ Comp B
 
-    -- Conjecture, this should imply the following relative right
-    -- adjoint:
-    -- 
-    -- i : 𝕍 → SET
-    -- 𝕍(A, U B) ≡ SET(i A, Forget (𝕋 B)) ≡ 
-    -- so U is a right-adjoint to i relative to 𝕋
+  -- The action of the functor on objects is the type
+  U : CTy → VTy
+  U = Functor.F-ob U-Functor
 
-  -- -- The action of the functor on objects is the type
-  -- U : CTy → VTy
-  -- U = Functor.F-ob U-Functor
+  -- and the thunk/force are the components of the natural isomorphism
+  force : ∀ {B} → Val (U B) → Comp B
+  force = Iso.inv (RelRightAdjoint.relAdjIso U-UMP) (Category.id 𝕍)
 
-  -- -- and the thunk/force are the components of the natural isomorphism
-  -- thunk : ∀ {B} → Comp B → Val (U B)
-  -- thunk {B} = isIso.inv (NatIso.nIso U-UMP B)
+  thunk : ∀ {A B} → (Val A → Comp B) → (Val A → Val (U B))
+  thunk {B} = Iso.fun (RelRightAdjoint.relAdjIso U-UMP)
 
-  -- force : ∀ {B} → Val (U B) → Comp B
-  -- force {B} = NatTrans.N-ob (NatIso.trans U-UMP) B
+  -- If we have a unit type, we should be able to make thunk more like
+  -- we expect, i.e., just an inverse to force.
 
-  -- -- The F type is a left adjoint to 𝕋, relative to the inclusion i
-  -- field
-  --   F-Functor : Functor 𝕍 ℂ
-  --   F-UMP : RelLeftAdjoint i F-Functor 𝕋
-  --   -- Stk (F A) B =~ Val A -> Comp B
+  -- The F type is a left adjoint to (Forget ∘ 𝕋), relative to the functor i : 𝕍 → SET
+  field
+    F-Functor : Functor 𝕍 ℂ
+    F-UMP : RelLeftAdjoint i F-Functor (funcComp (ForgetEMAlgebra T) 𝕋)
+    -- Stk (F A) B =~ Val A -> Comp B
 
-  -- F : VTy → CTy
-  -- F = Functor.F-ob F-Functor
+  F : VTy → CTy
+  F = Functor.F-ob F-Functor
 
-  -- ret : ∀ {A} → Val A → Comp (F A)
-  -- ret = {!!}
+  ret : ∀ {A} → Val A → Comp (F A)
+  ret = Iso.fun (RelLeftAdjoint.relAdjIso F-UMP) (Category.id ℂ)
 
-  -- bind : ∀ {A B} → (Val A → Comp B) → Stk (F A) B
-  -- bind = {!!}
+  bind : ∀ {A B} → (Val A → Comp B) → Stk (F A) B
+  bind = Iso.inv (RelLeftAdjoint.relAdjIso F-UMP)
 
-  -- -- If U is a relative *right* adjoint as above, then we can show
-  -- -- that F -| U
+  -- We should be able to then derive the adjunction between F and U
+  -- F -| U
+  -- ℂ (F A) B ≡ SET(i A, Forget (𝕋 B))
+  --           ≡ 𝕍(A, U B)
+  adjoint : NaturalBijection._⊣_ F-Functor U-Functor
+  adjoint = {!!}
+
+  -- The CBPV function type says that ℂ has *𝕍-powers*
+  -- and that 𝕋 *preserves* 𝕍-powers (note already that SET has 𝕍-powers)
+  field
+    ⟶-Functor : Functor ((𝕍 ^op) × ℂ) ℂ
+
+  _⟶_ : VTy → CTy → CTy
+  A ⟶ B = Functor.F-ob ⟶-Functor (A , B)
+    -- ℂ has 𝕍-powers
+  field
+    -- this needs to be a natural isomorphism though...
+    ⟶-Powers : ∀ {A B B'} → Iso (Stk B' (A ⟶ B)) (Val A → Stk B' B)
+    -- ℂ has *𝕍-powers*:        ℂ B' (A ⟶ B) ≡ SET (i A) (ℂ B' B)
+    ⟶-𝕋-Powers : ∀ {A B} → Iso (Comp (A ⟶ B)) (Val A → Comp B)
+    -- 𝕋 *preserves* 𝕍-powers?: Comp (A ⟶ B) ≡ Val A → Comp B
+    --                          (Forget o 𝕋) (A ⟶ B) ≡ SET (i A) ((Forget o 𝕋) B)
+    --                          equivalent to
+    --                          SET X (𝕋 (B ^ A)) ≡ SET (X × A) ((Forget o 𝕋) B)
+    --                          by the Yoneda lemma
+    -- further need that the action of (Forget o 𝕋) preserves this isomorphism
+  app : ∀ {A B} → Val A → Stk (A ⟶ B) B
+  app = Iso.fun ⟶-Powers (Category.id ℂ)
+
+  lam : ∀ {A B} → (Val A → Comp B) → Comp (A ⟶ B)
+  lam = Iso.inv ⟶-𝕋-Powers
   
-  -- -- ℂ (F A) B ≡ SET(i A, 𝕋 B)
-  -- --           ≡ 𝕍(A, U B)
-  -- adjoint : NaturalBijection._⊣_ F-Functor U-Functor
-  -- adjoint = {!!}
-
-  -- -- The CBPV function type says that ℂ has *𝕍-powers*
-  -- -- and that 𝕋 *preserves* 𝕍-powers (note already that SET has 𝕍-powers)
-  -- -- field
-  --   -- ℂ has 𝕍-powers
-  --   -- ℂ has *𝕍-powers*:        Stk B' (A ⟶ B) ≡ Val A → Stk B' B
-  --   --                          ℂ B' (B ^ A) ≡ SET (i A) (ℂ B' B)
-  --   -- 𝕋 *preserves* 𝕍-powers?: Comp (A ⟶ B) ≡ Val A → Comp B
-  --   --                          𝕋 (B ^ A) ≡ SET (i A) (𝕋 B)
-  --   --                          SET X (𝕋 (B ^ A)) ≡ SET (X × A) (𝕋 B)
-
   -- -- Value products: 𝕍 has products and i preserves them
   
   -- -- Value coproducts: 𝕍 has coproducts and i preserves them

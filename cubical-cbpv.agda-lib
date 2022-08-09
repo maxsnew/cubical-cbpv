@@ -1,3 +1,4 @@
 name: cubical-cbpv
 include: .
 depend: cubical
+flags: --cubical --no-import-sorts
