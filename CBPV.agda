@@ -10,6 +10,7 @@ open import Cubical.Categories.Category
 open import Cubical.Categories.Constructions.BinProduct
 open import Cubical.Categories.Instances.EilenbergMoore
 open import Cubical.Categories.Functor
+open import Cubical.Categories.Functors.HomFunctor
 open import Cubical.Categories.Instances.Sets
 open import Cubical.Categories.Monad.Base
 open import Cubical.Categories.NaturalTransformation
@@ -18,7 +19,7 @@ private
   variable
     ℓ ℓ' : Level
 
-open import RelativeAdjoint
+open import Profunctor
 
 -- The following is a definition of a model of CBPV internal to a
 -- ∞?-topos.
@@ -86,10 +87,10 @@ record CBPV ℓ ℓ' (T : Monad (SET ℓ')) : Type (ℓ-suc (ℓ-max ℓ ℓ')) 
 
   -- First, a thunk type U can be defined as a right adjoint to i,
   -- relative to the functor (Forget ∘ 𝕋) : ℂ → SET
+  
   field
-    U-Functor : Functor ℂ 𝕍
     -- 𝕍(A, U B) ≡ SET(i A, Forget (𝕋 B))
-    U-UMP : (RelRightAdjoint (funcComp (ForgetEMAlgebra T) 𝕋) i U-Functor)
+    U-UMP : RightRepresentable (HomFunctor (SET ℓ') prof[ i , ForgetEMAlgebra T ∘F 𝕋 ])
 
     -- Under very mild conditions about what other connectives we
     -- support, this is equivalent to a natural isomorphism
@@ -97,64 +98,66 @@ record CBPV ℓ ℓ' (T : Monad (SET ℓ')) : Type (ℓ-suc (ℓ-max ℓ ℓ')) 
 
   -- The action of the functor on objects is the type
   U : CTy → VTy
-  U = Functor.F-ob U-Functor
+  U = Functor.F-ob (RightRepresentable.G U-UMP)
 
   -- and the thunk/force are the components of the natural isomorphism
-  force : ∀ {B} → Val (U B) → Comp B
-  force = Iso.inv (RelRightAdjoint.relAdjIso U-UMP) (Category.id 𝕍)
+  -- force : ∀ {B} → Val (U B) → Comp B
+  -- force V = NatTrans.N-ob (NatIso.trans {!RightRepresentable.repr U-UMP !}) {!!} -- Iso.inv (RelRightAdjoint.relAdjIso U-UMP) (Category.id 𝕍)
 
-  thunk : ∀ {A B} → (Val A → Comp B) → (Val A → Val (U B))
-  thunk {B} = Iso.fun (RelRightAdjoint.relAdjIso U-UMP)
+  -- thunk : ∀ {A B} → (Val A → Comp B) → (Val A → Val (U B))
+  -- thunk {B} = Iso.fun (RelRightAdjoint.relAdjIso U-UMP)
 
   -- If we have a unit type, we should be able to make thunk more like
   -- we expect, i.e., just an inverse to force.
 
   -- The F type is a left adjoint to (Forget ∘ 𝕋), relative to the functor i : 𝕍 → SET
   field
-    F-Functor : Functor 𝕍 ℂ
-    F-UMP : RelLeftAdjoint i F-Functor (funcComp (ForgetEMAlgebra T) 𝕋)
+      F-UMP : LeftRepresentable (HomFunctor (SET ℓ') prof[ i , ForgetEMAlgebra T ∘F 𝕋 ])
     -- Stk (F A) B =~ Val A -> Comp B
 
-  F : VTy → CTy
-  F = Functor.F-ob F-Functor
+  -- F : VTy → CTy
+  -- F = Functor.F-ob F-Functor
 
-  ret : ∀ {A} → Val A → Comp (F A)
-  ret = Iso.fun (RelLeftAdjoint.relAdjIso F-UMP) (Category.id ℂ)
+  -- ret : ∀ {A} → Val A → Comp (F A)
+  -- ret = Iso.fun (RelLeftAdjoint.relAdjIso F-UMP) (Category.id ℂ)
 
-  bind : ∀ {A B} → (Val A → Comp B) → Stk (F A) B
-  bind = Iso.inv (RelLeftAdjoint.relAdjIso F-UMP)
+  -- bind : ∀ {A B} → (Val A → Comp B) → Stk (F A) B
+  -- bind = Iso.inv (RelLeftAdjoint.relAdjIso F-UMP)
 
   -- We should be able to then derive the adjunction between F and U
   -- F -| U
   -- ℂ (F A) B ≡ SET(i A, Forget (𝕋 B))
   --           ≡ 𝕍(A, U B)
-  adjoint : NaturalBijection._⊣_ F-Functor U-Functor
-  adjoint = {!!}
+  -- adjoint : NaturalBijection._⊣_ F-Functor U-Functor
+  -- adjoint = {!!}
 
   -- The CBPV function type says that ℂ has *𝕍-powers*
   -- and that 𝕋 *preserves* 𝕍-powers (note already that SET has 𝕍-powers)
   field
-    ⟶-Functor : Functor ((𝕍 ^op) × ℂ) ℂ
-
-  _⟶_ : VTy → CTy → CTy
-  A ⟶ B = Functor.F-ob ⟶-Functor (A , B)
-    -- ℂ has 𝕍-powers
-  field
-    -- this needs to be a natural isomorphism though...
-    ⟶-Powers : ∀ {A B B'} → Iso (Stk B' (A ⟶ B)) (Val A → Stk B' B)
-    -- ℂ has *𝕍-powers*:        ℂ B' (A ⟶ B) ≡ SET (i A) (ℂ B' B)
-    ⟶-𝕋-Powers : ∀ {A B} → Iso (Comp (A ⟶ B)) (Val A → Comp B)
+    -- ℂ has *𝕍-powers*:
+    --   ℂ B' (A ⟶ B) ≡ SET (i A) (ℂ B' B)
+    ℂ-has-𝕍-powers : RightRepresentable (HomFunctor (SET ℓ') prof[ i , HomFunctor ℂ ]) 
+    -- ⟶-Functor : Functor ((𝕍 ^op) × ℂ) ℂ
+    
     -- 𝕋 *preserves* 𝕍-powers?: Comp (A ⟶ B) ≡ Val A → Comp B
     --                          (Forget o 𝕋) (A ⟶ B) ≡ SET (i A) ((Forget o 𝕋) B)
     --                          equivalent to
     --                          SET X (𝕋 (B ^ A)) ≡ SET (X × A) ((Forget o 𝕋) B)
     --                          by the Yoneda lemma
     -- further need that the action of (Forget o 𝕋) preserves this isomorphism
-  app : ∀ {A B} → Val A → Stk (A ⟶ B) B
-  app = Iso.fun ⟶-Powers (Category.id ℂ)
+    -- ⟶-𝕋-Powers : ∀ {A B} → Iso (Comp (A ⟶ B)) (Val A → Comp B)
 
-  lam : ∀ {A B} → (Val A → Comp B) → Comp (A ⟶ B)
-  lam = Iso.inv ⟶-𝕋-Powers
+  -- _⟶_ : VTy → CTy → CTy
+  -- A ⟶ B = Functor.F-ob ⟶-Functor (A , B)
+  --   -- ℂ has 𝕍-powers
+  -- field
+  --   -- this needs to be a natural isomorphism though...
+  --   ⟶-Powers : ∀ {A B B'} → Iso (Stk B' (A ⟶ B)) (Val A → Stk B' B)
+  -- app : ∀ {A B} → Val A → Stk (A ⟶ B) B
+  -- app = Iso.fun ⟶-Powers (Category.id ℂ)
+
+  -- lam : ∀ {A B} → (Val A → Comp B) → Comp (A ⟶ B)
+  -- lam = Iso.inv ⟶-𝕋-Powers
   
   -- -- Value products: 𝕍 has products and i preserves them
   
