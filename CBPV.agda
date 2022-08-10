@@ -14,6 +14,7 @@ open import Cubical.Categories.Functors.HomFunctor
 open import Cubical.Categories.Instances.Sets
 open import Cubical.Categories.Monad.Base
 open import Cubical.Categories.NaturalTransformation
+open import Cubical.Data.Unit
 
 private
   variable
@@ -165,23 +166,36 @@ record CBPV ℓ ℓ' (T : Monad (SET ℓ')) : Type (ℓ-suc (ℓ-max ℓ ℓ')) 
                             ((HomFunctor (SET ℓ') prof[ i , HomFunctor 𝕍 ]) ∘F ((Fst _ (𝕍 ^op) ∘F Fst _ _ ,F (Snd _ _ ∘F Fst _ _ ,F Snd _ _))))
                             ((HomFunctor (SET ℓ') prof[ i , HomFunctor (SET ℓ') prof[ i , Id {C = SET ℓ'} ] ]) ∘F (Fst _ (𝕍 ^op) ∘F Fst _ _ ,F (Snd _ _ ∘F Fst _ _ ,F Snd _ _)))
                             i
+    i-preserves-𝟙 : LeftRepresentablePreservingFunctor
+                      {C = 𝟙C} {D = 𝕍} {E = (SET ℓ')}
+                      (i ∘F Snd 𝟙C 𝕍)
+                      (Snd 𝟙C (SET ℓ'))
+                      i
 
-    -- todo: unary, need terminal category/constant functors first
-    -- i-preserves-𝕍-𝟙 : LeftRepresentablePreservingFunctor
-    --                   {C = 𝟙C} {D = 𝕍} {E = (SET ℓ')}
-    --                   ?
-    --                   ?
+  absolute-Unit : hSet ℓ'
+  absolute-Unit = Unit* , (λ x y x₁ y₁ → refl)
   -- Value coproducts: 𝕍 has coproducts and i preserves them
   -- for this, need that SET has products and that taking products is a functor...
-  -- field
+  field
   --   i-preserves-𝕍-coproducts : LeftRepresentablePreservingFunctor
   --                              {C = 𝕍 × 𝕍} {D = 𝕍} {E = SET ℓ'}
   --                              {!? ,F ?!}
   --                              {!!}
   --                              i
+    i-preserves-0 : LeftRepresentablePreservingFunctor
+                    {C = 𝟙C} {D = 𝕍} {E = SET ℓ'}
+                    (Constant _ _ absolute-Unit)
+                    (Constant _ _ absolute-Unit)
+                    i
 
-  -- -- Computation products: ℂ has products and 𝕋 preserves them
-  -- -- Need that SET has products and that taking products is a functor...
+  -- Computation products: ℂ has products and 𝕋 preserves them
+  -- Need that SET has products and that taking products is a functor...
+  field
+    𝕋-preserves-⊤ : RightRepresentablePreservingFunctor
+                    {D = 𝟙C} {B = ℂ} {C = (SET ℓ')}
+                    (Constant _ _ absolute-Unit)
+                    (Constant _ _ absolute-Unit)
+                    (ForgetEMAlgebra T ∘F 𝕋)
 
   -- -- We can also add the EEC structures
   -- -- Linear function space says ℂ is 𝕍-enriched

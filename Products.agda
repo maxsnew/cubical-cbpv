@@ -47,3 +47,23 @@ module _ where
   (G ,F H) .F-hom g = (G ⟪ g ⟫ , H ⟪ g ⟫)
   (G ,F H) .F-id = ≡-× (G .F-id) (H .F-id)
   (G ,F H) .F-seq _ _ = ≡-× (G .F-seq _ _) (H .F-seq _ _)
+
+Constant : (C : Category ℓC ℓC') (D : Category ℓD ℓD') (d : ob D) → Functor C D
+F-ob (Constant C D d) c = d
+F-hom (Constant C D d) φ = id D
+F-id (Constant C D d) = refl
+F-seq (Constant C D d) φ χ = sym (⋆IdR D _)
+
+open import Cubical.Data.Unit
+𝟙C : Category ℓ-zero ℓ-zero
+𝟙C .ob = Unit*
+𝟙C .Hom[_,_] x y = Unit*
+𝟙C .id = lift tt
+𝟙C ._⋆_ (lift tt) (lift tt) = lift tt
+𝟙C .⋆IdL (lift tt) = refl
+𝟙C .⋆IdR (lift tt) = refl
+𝟙C .⋆Assoc (lift tt) (lift tt) (lift tt) = refl
+𝟙C .isSetHom (lift tt) (lift tt) _ _ = refl
+
+𝟙F : ∀ (C : Category ℓC ℓC') → Functor C 𝟙C
+𝟙F C = Constant C 𝟙C (lift tt)
