@@ -20,6 +20,7 @@ private
     ℓ ℓ' : Level
 
 open import Profunctor
+open import Products
 
 -- The following is a definition of a model of CBPV internal to a
 -- ∞?-topos.
@@ -134,19 +135,17 @@ record CBPV ℓ ℓ' (T : Monad (SET ℓ')) : Type (ℓ-suc (ℓ-max ℓ ℓ')) 
   -- The CBPV function type says that ℂ has *𝕍-powers*
   -- and that 𝕋 *preserves* 𝕍-powers (note already that SET has 𝕍-powers)
   field
-    -- ℂ has *𝕍-powers*:
-    --   ℂ B' (A ⟶ B) ≡ SET (i A) (ℂ B' B)
-    ℂ-has-𝕍-powers : RightRepresentable (HomFunctor (SET ℓ') prof[ i , HomFunctor ℂ ]) 
-    -- ⟶-Functor : Functor ((𝕍 ^op) × ℂ) ℂ
-    
-    -- 𝕋 *preserves* 𝕍-powers?: Comp (A ⟶ B) ≡ Val A → Comp B
-    --                          (Forget o 𝕋) (A ⟶ B) ≡ SET (i A) ((Forget o 𝕋) B)
-    --                          equivalent to
-    --                          SET X (𝕋 (B ^ A)) ≡ SET (X × A) ((Forget o 𝕋) B)
-    --                          by the Yoneda lemma
-    -- further need that the action of (Forget o 𝕋) preserves this isomorphism
-    -- ⟶-𝕋-Powers : ∀ {A B} → Iso (Comp (A ⟶ B)) (Val A → Comp B)
-
+    -- ℂ has 𝕍-ℂ-powers:
+    --   ℂ B' (A ⟶ℂ B) ≡ SET (i A) (ℂ B' B)
+    -- SET has 𝕍-ℂ-powers (consequence of cartesian closure)
+    --   SET X (A ⟶SET B) ≡ SET (i A) (SET X (Comp B))
+    -- And 𝕋 preserves 𝕍-ℂ-powers
+    --   𝕋 (A ⟶ℂ B) ≡ (A ⟶SET B)
+    𝕋-preserves-𝕍-ℂ-powers : RightRepresentablePreservingFunctor
+                             (((HomFunctor (SET ℓ') prof[ i , HomFunctor ℂ ]) ∘F (Fst (𝕍 ^op) _ ∘F Snd _ _ ,F (Fst (ℂ ^op) _  ,F Snd _ ℂ ∘F Snd _ _))))
+                             ((((HomFunctor (SET ℓ') prof[ i , HomFunctor (SET ℓ') prof[ Id {C = SET ℓ'} , ForgetEMAlgebra T ∘F 𝕋 ] ])) ∘F (Fst (𝕍 ^op) _ ∘F Snd _ _ ,F (Fst ((SET ℓ') ^op) _  ,F Snd _ ℂ ∘F Snd _ _))))
+                             (ForgetEMAlgebra T ∘F 𝕋)
+  -- TODO: ⟶ "syntax"
   -- _⟶_ : VTy → CTy → CTy
   -- A ⟶ B = Functor.F-ob ⟶-Functor (A , B)
   --   -- ℂ has 𝕍-powers
@@ -159,10 +158,30 @@ record CBPV ℓ ℓ' (T : Monad (SET ℓ')) : Type (ℓ-suc (ℓ-max ℓ ℓ')) 
   -- lam : ∀ {A B} → (Val A → Comp B) → Comp (A ⟶ B)
   -- lam = Iso.inv ⟶-𝕋-Powers
   
-  -- -- Value products: 𝕍 has products and i preserves them
-  
-  -- -- Value coproducts: 𝕍 has coproducts and i preserves them
+  -- Value products: 𝕍 has 𝕍-tensors, SET has 𝕍-tensors and i preserves them
+  field
+    i-preserves-𝕍-tensors : LeftRepresentablePreservingFunctor
+                            {C = 𝕍 × 𝕍} {D = 𝕍} {E = (SET ℓ')}
+                            ((HomFunctor (SET ℓ') prof[ i , HomFunctor 𝕍 ]) ∘F ((Fst _ (𝕍 ^op) ∘F Fst _ _ ,F (Snd _ _ ∘F Fst _ _ ,F Snd _ _))))
+                            ((HomFunctor (SET ℓ') prof[ i , HomFunctor (SET ℓ') prof[ i , Id {C = SET ℓ'} ] ]) ∘F (Fst _ (𝕍 ^op) ∘F Fst _ _ ,F (Snd _ _ ∘F Fst _ _ ,F Snd _ _)))
+                            i
+
+    -- todo: unary, need terminal category/constant functors first
+    -- i-preserves-𝕍-𝟙 : LeftRepresentablePreservingFunctor
+    --                   {C = 𝟙C} {D = 𝕍} {E = (SET ℓ')}
+    --                   ?
+    --                   ?
+  -- Value coproducts: 𝕍 has coproducts and i preserves them
+  -- for this, need that SET has products and that taking products is a functor...
+  -- field
+  --   i-preserves-𝕍-coproducts : LeftRepresentablePreservingFunctor
+  --                              {C = 𝕍 × 𝕍} {D = 𝕍} {E = SET ℓ'}
+  --                              {!? ,F ?!}
+  --                              {!!}
+  --                              i
+
   -- -- Computation products: ℂ has products and 𝕋 preserves them
+  -- -- Need that SET has products and that taking products is a functor...
 
   -- -- We can also add the EEC structures
   -- -- Linear function space says ℂ is 𝕍-enriched
@@ -186,8 +205,7 @@ record CBPV ℓ ℓ' (T : Monad (SET ℓ')) : Type (ℓ-suc (ℓ-max ℓ ℓ')) 
   -- U B ≡ W ⊸ B
   -- F A ≡ A ⊘ W
 
-
-  -- Maybe some dependently typed stuff too...
+  -- Maybe some dependently typed stuff too, as a treat
   -- ValTy : VTy -- impredicative, can also make predicative
   -- Val ValTy ≡ VTy
 
@@ -195,15 +213,6 @@ record CBPV ℓ ℓ' (T : Monad (SET ℓ')) : Type (ℓ-suc (ℓ-max ℓ ℓ')) 
   -- Π : ∀ A → (Val A → CTy) → CTy
   -- ((x : Val A) → (Comp (B x))) ≡ Comp (Π A B)
   -- (x : Val A) → Stk B' (Comp (B x)) ≡ Stk B' (Π A B)
-
-  -- We can also extend this with algebraic structures
-  -- The cleanest way to do this would basically be to
-  -- change 𝕋 : ℂ → SET
-  -- to     𝕋 : ℂ → 𝕄
-  -- where 𝕄 is the category of models of the algebraic theory
-
-  -- this would say that our computation types support the algebraic
-  -- structure and all stacks preserve it.
 
 -- We should be able to show that for any theory T, we get a CBPV
 -- model that has all T structures, or more generally, for any

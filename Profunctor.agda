@@ -70,10 +70,11 @@ record LeftRepresentable {C : Category ℓC ℓC'} {D : Category ℓD ℓD'} (P 
 
 record LeftRepresentablePreservingFunctor {C : Category ℓC ℓC'} {D : Category ℓD ℓD'} {E : Category ℓE ℓE'}
                                     (Pd : Profunctor C D ℓP) (Pe : Profunctor C E ℓP)
-                                    (ReprD : LeftRepresentable {C = C}{D = D} Pd) (ReprE : LeftRepresentable Pe)
-                                    : Type (ℓ-max (ℓ-max ℓE ℓE') (ℓ-max (ℓ-max ℓC ℓC') (ℓ-max ℓD ℓD'))) where
+                                    (F : Functor D E)
+                                    : Type (ℓ-max (ℓ-max (ℓ-max (ℓ-max ℓD (ℓ-suc ℓD')) (ℓ-max ℓE (ℓ-suc ℓE'))) (ℓ-max ℓC ℓC')) (ℓ-suc ℓP)) where
   field
-    F : Functor D E
+    ReprD : LeftRepresentable {C = C}{D = D} Pd
+    ReprE : LeftRepresentable Pe
     preserves : NatIso (LeftRepresentable.F ReprE) (F ∘F LeftRepresentable.F ReprD)
 
 RightRepresents : {C : Category ℓC ℓC'} {D : Category ℓD ℓD'} (G : Functor D C) (P : Profunctor C D ℓP)
@@ -90,10 +91,11 @@ record RightRepresentable {C : Category ℓC ℓC'} {D : Category ℓD ℓD'} (P
 
 record RightRepresentablePreservingFunctor {D : Category ℓD ℓD'} {B : Category ℓB ℓB'}{C : Category ℓC ℓC'}
                                     (Pb : Profunctor B D ℓP) (Pc : Profunctor C D ℓP)
-                                    (ReprB : RightRepresentable {C = B}{D = D} Pb) (ReprC : RightRepresentable Pc)
-                                    : Type (ℓ-max (ℓ-max ℓB ℓB') (ℓ-max (ℓ-max ℓC ℓC') (ℓ-max ℓD ℓD'))) where
+                                    (G : Functor B C)
+                                    : Type (ℓ-max (ℓ-max (ℓ-max (ℓ-max ℓD ℓD') (ℓ-max ℓB (ℓ-suc ℓB'))) (ℓ-max ℓC (ℓ-suc ℓC'))) (ℓ-suc ℓP)) where
   field
-    G : Functor B C
+    ReprB : RightRepresentable {C = B}{D = D} Pb
+    ReprC : RightRepresentable Pc
     preserves : NatIso (RightRepresentable.G ReprC) (G ∘F RightRepresentable.G ReprB)
 
 
