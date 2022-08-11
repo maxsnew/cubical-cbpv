@@ -88,8 +88,27 @@ SET-BinProducts ℓ = P
 BinProductIntro : ∀ {C : Category ℓC ℓC'} {a b c} → (ps : BinProducts C) → C [ a , b ] → C [ a , c ] → C [ a , BinProduct.binProdOb (ps b c) ]
 BinProductIntro ps f₁ f₂ = fst (fst (BinProduct.univProp (ps _ _) f₁ f₂))
 
+
 BPπ₁ : ∀ {C : Category ℓC ℓC'} {a b} → (ps : BinProducts C) → C [ BinProduct.binProdOb (ps a b) , a ]
 BPπ₁ ps = BinProduct.binProdPr₁ (ps _ _)
+
+BPπ₂ : ∀ {C : Category ℓC ℓC'} {a b} → (ps : BinProducts C) → C [ BinProduct.binProdOb (ps a b) , b ]
+BPπ₂ ps = BinProduct.binProdPr₂ (ps _ _)
+
+BinProductβ₁ : ∀ {C : Category ℓC ℓC'} {a b c} → (ps : BinProducts C) → (f : C [ a , b ]) (g : C [ a , c ])
+                   → (Category._⋆_ C (BinProductIntro ps f g) (BPπ₁ ps) ≡ f)
+BinProductβ₁ = {!!}
+
+BinProductβ₂ : ∀ {C : Category ℓC ℓC'} {a b c} → (ps : BinProducts C) → (f : C [ a , b ]) (g : C [ a , c ])
+                   → (Category._⋆_ C (BinProductIntro ps f g) (BPπ₂ ps) ≡ g)
+BinProductβ₂ = {!!}
+
+BinProductIntroEqv : ∀ {C : Category ℓC ℓC'} {a b c} → (ps : BinProducts C) → (f : C [ a , b ]) (g : C [ a , c ]) (h : C [ a , BinProduct.binProdOb (ps b c) ])
+                   → (f ≡ (Category._⋆_ C h (BPπ₁ ps)))
+                   → (g ≡ (Category._⋆_ C h (BPπ₂ ps)))
+                   → (BinProductIntro ps f g ≡ h)
+BinProductIntroEqv = {!!}                   
+
 
 -- | TODO: if C is univalent this can be done from hasBinProducts
 BinProductF : ∀ {C : Category ℓC ℓC'} → BinProducts C → Functor (C ×C C) C
@@ -99,6 +118,98 @@ BinProductF : ∀ {C : Category ℓC ℓC'} → BinProducts C → Functor (C ×C
                                   (BinProduct.binProdPr₂ (BinProducts-C _ _) ⋆C snd f*g)
   where module C = Category C
         _⋆C_ = C._⋆_
-(BinProductF BinProducts-C) .F-id = {!!}
-(BinProductF BinProducts-C) .F-seq = {!!}
 
+-- id x id = < id o pi1 , id o pi2 >
+-- by UMP to prove id = < id o pi1 , id o pi2 >
+-- STS pii o id = id o pii (ez)
+-- 
+(BinProductF {C = C} BinProducts-C) .F-id {x = x} =
+    BinProductIntroEqv BinProducts-C (π₁ ⋆C C.id) (π₂ ⋆C C.id) C.id
+             (π₁ ⋆C C.id ≡⟨ C.⋆IdR _ ⟩
+              π₁         ≡⟨ sym (C.⋆IdL _) ⟩
+              C.id ⋆C π₁
+              ∎)
+             (π₂ ⋆C C.id ≡⟨ C.⋆IdR _ ⟩
+              π₂         ≡⟨ sym (C.⋆IdL _) ⟩
+              C.id ⋆C π₂
+              ∎)
+  where module C = Category C
+        _⋆C_ = C._⋆_
+        module BP = BinProduct (BinProducts-C (fst x) (snd x))
+        π₁ = BP.binProdPr₁ 
+        π₂ = BP.binProdPr₂
+
+-- (f x g) o (f' x g') = < f o pi1 , g o pi1 > o < f' o pi1 , g' o pi2 >
+-- vs (f o f') x (g o g') = < f o f' o pi1 , g o g' o pi2 >
+-- by UMP STS
+--   pi1 o < f o pi1 , g o pi1 > o < f' o pi1 , g' o pi2 >
+--   = f o f' o pi1
+-- 
+--   pi1 o < f o pi1 , g o pi1 > o < f' o pi1 , g' o pi2 >
+--   =(β)= f o pi1 o < f' o pi1 , g' o pi2 >
+--   =(β)= f o f' o pi1
+(BinProductF {C = C} BinProducts-C) .F-seq {x}{y}{z} f⋆g f'⋆g' =
+    BinProductIntroEqv BinProducts-C (π₁ ⋆C (fst f⋆g ⋆C fst f'⋆g')) ((π₂ ⋆C (snd f⋆g ⋆C snd f'⋆g')) )
+                       (⟨ π₁ ⋆C fst f⋆g , π₂ ⋆C snd f⋆g ⟩' ⋆C ⟨ π₁' ⋆C fst f'⋆g' , π₂' ⋆C snd f'⋆g' ⟩'')
+                       (sym
+                       (((⟨ π₁ ⋆C fst f⋆g , π₂ ⋆C snd f⋆g ⟩' ⋆C ⟨ π₁' ⋆C fst f'⋆g' , π₂' ⋆C snd f'⋆g' ⟩'') ⋆C π₁'') ≡⟨ C.⋆Assoc _ _ _ ⟩
+                        (⟨ π₁ ⋆C fst f⋆g , π₂ ⋆C snd f⋆g ⟩' ⋆C (⟨ π₁' ⋆C fst f'⋆g' , π₂' ⋆C snd f'⋆g' ⟩'' ⋆C π₁'')) ≡⟨ (λ i → ⟨ π₁ ⋆C fst f⋆g , π₂ ⋆C snd f⋆g ⟩' ⋆C BinProductβ₁ BinProducts-C (π₁' ⋆C fst f'⋆g') (π₂' ⋆C snd f'⋆g') i) ⟩
+                        (⟨ π₁ ⋆C fst f⋆g , π₂ ⋆C snd f⋆g ⟩' ⋆C (π₁' ⋆C fst f'⋆g')) ≡⟨ sym (C.⋆Assoc _ _ _)  ⟩
+                        ((⟨ π₁ ⋆C fst f⋆g , π₂ ⋆C snd f⋆g ⟩' ⋆C π₁') ⋆C fst f'⋆g') ≡⟨ (λ i → BinProductβ₁ BinProducts-C (π₁ ⋆C fst f⋆g) (π₂ ⋆C snd f⋆g) i ⋆C fst f'⋆g') ⟩
+                        ((π₁ ⋆C fst f⋆g) ⋆C fst f'⋆g') ≡⟨ C.⋆Assoc _ _ _ ⟩
+                        (π₁ ⋆C (fst f⋆g ⋆C fst f'⋆g'))
+                        ∎))
+                       (sym
+                       (((⟨ π₁ ⋆C fst f⋆g , π₂ ⋆C snd f⋆g ⟩' ⋆C ⟨ π₁' ⋆C fst f'⋆g' , π₂' ⋆C snd f'⋆g' ⟩'') ⋆C π₂'') ≡⟨ C.⋆Assoc _ _ _ ⟩
+                        (⟨ π₁ ⋆C fst f⋆g , π₂ ⋆C snd f⋆g ⟩' ⋆C (⟨ π₁' ⋆C fst f'⋆g' , π₂' ⋆C snd f'⋆g' ⟩'' ⋆C π₂'')) ≡⟨ (λ i → ⟨ π₁ ⋆C fst f⋆g , π₂ ⋆C snd f⋆g ⟩' ⋆C BinProductβ₂ BinProducts-C (π₁' ⋆C fst f'⋆g') (π₂' ⋆C snd f'⋆g') i) ⟩
+                        (⟨ π₁ ⋆C fst f⋆g , π₂ ⋆C snd f⋆g ⟩' ⋆C (π₂' ⋆C snd f'⋆g')) ≡⟨ sym (C.⋆Assoc _ _ _)  ⟩
+                        ((⟨ π₁ ⋆C fst f⋆g , π₂ ⋆C snd f⋆g ⟩' ⋆C π₂') ⋆C snd f'⋆g') ≡⟨ (λ i → BinProductβ₂ BinProducts-C (π₁ ⋆C fst f⋆g) (π₂ ⋆C snd f⋆g) i ⋆C snd f'⋆g') ⟩
+                        ((π₂ ⋆C snd f⋆g) ⋆C snd f'⋆g') ≡⟨ C.⋆Assoc _ _ _ ⟩
+                        (π₂ ⋆C (snd f⋆g ⋆C snd f'⋆g'))
+                        ∎))
+
+
+    -- {!!}
+    -- {!!}
+  where module C = Category C
+        _⋆C_ = C._⋆_
+        module BP = BinProduct (BinProducts-C (fst x) (snd x))
+        π₁ = BP.binProdPr₁ 
+        π₂ = BP.binProdPr₂
+
+        module BP' = BinProduct (BinProducts-C (fst y) (snd y))
+        π₁' = BP'.binProdPr₁ 
+        π₂' = BP'.binProdPr₂
+        ⟨_,_⟩' : ∀ {Γ} → C [ Γ , fst y ] → C [ Γ , snd y ] → C [ Γ , BP'.binProdOb ]
+        ⟨_,_⟩' f₁ f₂ = fst (fst (BP'.univProp f₁ f₂))
+
+        module BP'' = BinProduct (BinProducts-C (fst z) (snd z))
+        π₁'' = BP''.binProdPr₁ 
+        π₂'' = BP''.binProdPr₂
+        ⟨_,_⟩'' : ∀ {Γ} → C [ Γ , fst z ] → C [ Γ , snd z ] → C [ Γ , BP''.binProdOb ]
+        ⟨_,_⟩'' f₁ f₂ = fst (fst (BP''.univProp f₁ f₂))
+        -- ⟨_,_⟩ : C [ a , b ] → C [ 
+        -- ⟨_,_⟩ = BinProductIntro BinProducts-C
+        -- module BP = BinProduct (BinProducts-C (fst x) (snd x))
+
+-- Goal: BinProductIntro BinProducts-C
+-- ((BinProducts-C Products._.⋆C seq' (C ×C C) f⋆g f'⋆g')
+--  (BinProduct.binProdPr₁ (BinProducts-C (fst x) (snd x)))
+--  (fst (seq' (C ×C C) f⋆g f'⋆g')))
+--       ((BinProducts-C Products._.⋆C seq' (C ×C C) f⋆g f'⋆g')
+--        (BinProduct.binProdPr₂ (BinProducts-C (fst x) (snd x)))
+--        (snd (seq' (C ×C C) f⋆g f'⋆g')))
+--       ≡
+--       seq' C
+--       (BinProductIntro BinProducts-C
+--        ((BinProducts-C Products._.⋆C f⋆g)
+--         (BinProduct.binProdPr₁ (BinProducts-C (fst x) (snd x))) (fst f⋆g))
+--        ((BinProducts-C Products._.⋆C f⋆g)
+--         (BinProduct.binProdPr₂ (BinProducts-C (fst x) (snd x))) (snd f⋆g)))
+--       (BinProductIntro BinProducts-C
+--        ((BinProducts-C Products._.⋆C f'⋆g')
+--         (BinProduct.binProdPr₁ (BinProducts-C (fst y) (snd y)))
+--         (fst f'⋆g'))
+--        ((BinProducts-C Products._.⋆C f'⋆g')
+--         (BinProduct.binProdPr₂ (BinProducts-C (fst y) (snd y)))
+--         (snd f'⋆g')))
