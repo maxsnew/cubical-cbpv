@@ -68,6 +68,13 @@ record LeftRepresentable {C : Category ℓC ℓC'} {D : Category ℓD ℓD'} (P 
     F : Functor C D
     repr : LeftRepresents F P
 
+  module D = Category D
+  η : ∀ c → fst (P ⟅ c , (F ⟅ c ⟆) ⟆)
+  η c = lower (NatTrans.N-ob (NatIso.trans repr) _ (lift D.id))
+
+  Elim : ∀ {c d} → fst (P ⟅ c , d ⟆) → (D.Hom[ F ⟅ c ⟆ , d ])
+  Elim f = lower (isIso.inv (NatIso.nIso repr _) (lift f))
+
 record LeftRepresentablePreservingFunctor {C : Category ℓC ℓC'} {D : Category ℓD ℓD'} {E : Category ℓE ℓE'}
                                     (Pd : Profunctor C D ℓP) (Pe : Profunctor C E ℓP)
                                     (F : Functor D E)
@@ -88,6 +95,14 @@ record RightRepresentable {C : Category ℓC ℓC'} {D : Category ℓD ℓD'} (P
   field
     G : Functor D C
     repr : RightRepresents G P
+
+  module C = Category C
+  ϵ : ∀ d → fst (P ⟅ (G ⟅ d ⟆) , d ⟆)
+  ϵ d = lower (NatTrans.N-ob (NatIso.trans repr) _ (lift C.id))
+    where module repr = NatIso repr
+
+  Intro : ∀ {c}{d} → fst (P ⟅ c , d ⟆) → C.Hom[ c , G ⟅ d ⟆ ]
+  Intro {c}{d} f = lower ((isIso.inv (NatIso.nIso repr _)) (lift f))
 
 record RightRepresentablePreservingFunctor {D : Category ℓD ℓD'} {B : Category ℓB ℓB'}{C : Category ℓC ℓC'}
                                     (Pb : Profunctor B D ℓP) (Pc : Profunctor C D ℓP)
