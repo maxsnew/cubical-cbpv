@@ -97,18 +97,21 @@ BPπ₂ ps = BinProduct.binProdPr₂ (ps _ _)
 
 BinProductβ₁ : ∀ {C : Category ℓC ℓC'} {a b c} → (ps : BinProducts C) → (f : C [ a , b ]) (g : C [ a , c ])
                    → (Category._⋆_ C (BinProductIntro ps f g) (BPπ₁ ps) ≡ f)
-BinProductβ₁ = {!!}
+BinProductβ₁ {C = C}{b = b}{c = c} ps f g = fst (snd (fst (BP.univProp f g)))
+  where module BP = BinProduct (ps b c)
+        
 
 BinProductβ₂ : ∀ {C : Category ℓC ℓC'} {a b c} → (ps : BinProducts C) → (f : C [ a , b ]) (g : C [ a , c ])
                    → (Category._⋆_ C (BinProductIntro ps f g) (BPπ₂ ps) ≡ g)
-BinProductβ₂ = {!!}
+BinProductβ₂ {C = C}{b = b}{c = c} ps f g = snd (snd (fst (BP.univProp f g)))
+  where module BP = BinProduct (ps b c)
 
 BinProductIntroEqv : ∀ {C : Category ℓC ℓC'} {a b c} → (ps : BinProducts C) → (f : C [ a , b ]) (g : C [ a , c ]) (h : C [ a , BinProduct.binProdOb (ps b c) ])
                    → (f ≡ (Category._⋆_ C h (BPπ₁ ps)))
                    → (g ≡ (Category._⋆_ C h (BPπ₂ ps)))
                    → (BinProductIntro ps f g ≡ h)
-BinProductIntroEqv = {!!}                   
-
+BinProductIntroEqv {C = C}{b = b}{c = c} ps f g h fP gP = λ i → fst (snd (BP.univProp f g) (h , ((sym fP) , (sym gP))) i)                   
+  where module BP = BinProduct (ps b c)
 
 -- | TODO: if C is univalent this can be done from hasBinProducts
 BinProductF : ∀ {C : Category ℓC ℓC'} → BinProducts C → Functor (C ×C C) C
@@ -167,10 +170,6 @@ BinProductF : ∀ {C : Category ℓC ℓC'} → BinProducts C → Functor (C ×C
                         ((π₂ ⋆C snd f⋆g) ⋆C snd f'⋆g') ≡⟨ C.⋆Assoc _ _ _ ⟩
                         (π₂ ⋆C (snd f⋆g ⋆C snd f'⋆g'))
                         ∎))
-
-
-    -- {!!}
-    -- {!!}
   where module C = Category C
         _⋆C_ = C._⋆_
         module BP = BinProduct (BinProducts-C (fst x) (snd x))
@@ -188,28 +187,3 @@ BinProductF : ∀ {C : Category ℓC ℓC'} → BinProducts C → Functor (C ×C
         π₂'' = BP''.binProdPr₂
         ⟨_,_⟩'' : ∀ {Γ} → C [ Γ , fst z ] → C [ Γ , snd z ] → C [ Γ , BP''.binProdOb ]
         ⟨_,_⟩'' f₁ f₂ = fst (fst (BP''.univProp f₁ f₂))
-        -- ⟨_,_⟩ : C [ a , b ] → C [ 
-        -- ⟨_,_⟩ = BinProductIntro BinProducts-C
-        -- module BP = BinProduct (BinProducts-C (fst x) (snd x))
-
--- Goal: BinProductIntro BinProducts-C
--- ((BinProducts-C Products._.⋆C seq' (C ×C C) f⋆g f'⋆g')
---  (BinProduct.binProdPr₁ (BinProducts-C (fst x) (snd x)))
---  (fst (seq' (C ×C C) f⋆g f'⋆g')))
---       ((BinProducts-C Products._.⋆C seq' (C ×C C) f⋆g f'⋆g')
---        (BinProduct.binProdPr₂ (BinProducts-C (fst x) (snd x)))
---        (snd (seq' (C ×C C) f⋆g f'⋆g')))
---       ≡
---       seq' C
---       (BinProductIntro BinProducts-C
---        ((BinProducts-C Products._.⋆C f⋆g)
---         (BinProduct.binProdPr₁ (BinProducts-C (fst x) (snd x))) (fst f⋆g))
---        ((BinProducts-C Products._.⋆C f⋆g)
---         (BinProduct.binProdPr₂ (BinProducts-C (fst x) (snd x))) (snd f⋆g)))
---       (BinProductIntro BinProducts-C
---        ((BinProducts-C Products._.⋆C f'⋆g')
---         (BinProduct.binProdPr₁ (BinProducts-C (fst y) (snd y)))
---         (fst f'⋆g'))
---        ((BinProducts-C Products._.⋆C f'⋆g')
---         (BinProduct.binProdPr₂ (BinProducts-C (fst y) (snd y)))
---         (snd f'⋆g')))
