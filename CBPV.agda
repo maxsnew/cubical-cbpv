@@ -258,22 +258,8 @@ module Syntax {ℓ ℓ'} (T : Monad (SET ℓ')) (M : CBPV ℓ ℓ' T) where
   internalApp : ∀ {A B} → Comp (U (A ⟶ B) ⟶ A ⟶ B)
   internalApp = lam (λ f → lam (λ x → app (force f) x))
 
-  -- We should be able to then derive the adjunction between F and U
-  -- F -| U
-  -- ℂ (F A) B ≡ SET(i A, Forget (𝕋 B))
-  --           ≡ 𝕍(A, U B)
-  -- adjoint : NaturalBijection._⊣_ F-Functor U-Functor
-  -- adjoint = {!!}
-
-  -- TODO: ⟶ "syntax"
-  -- _⟶_ : VTy → CTy → CTy
-  -- A ⟶ B = Functor.F-ob ⟶-Functor (A , B)
-  --   -- ℂ has 𝕍-powers
-  -- field
-  --   -- this needs to be a natural isomorphism though...
-  --   ⟶-Powers : ∀ {A B B'} → Iso (Stk B' (A ⟶ B)) (Val A → Stk B' B)
-  -- app : ∀ {A B} → Val A → Stk (A ⟶ B) B
-  -- app = Iso.fun ⟶-Powers (Category.id ℂ)
-
-  -- lam : ∀ {A B} → (Val A → Comp B) → Comp (A ⟶ B)
-  -- lam = Iso.inv ⟶-𝕋-Powers
+  -- B^A is a retract of A then B has fpp
+  mixedY : ∀ {A B} → Comp (U (U (A ⟶ B) ⟶ F A) ⟶ U (A ⟶ A ⟶ B) ⟶ U(U B ⟶ B) ⟶ B)
+  mixedY = lam (λ enc → lam (λ dec → lam (λ f →
+           let ω = (thunk (lam (λ x → app (force f) (thunk (app (app (force dec) x) x))))) in
+           bind (λ ω' → app (force ω) ω') [ app (force enc) ω ])))
