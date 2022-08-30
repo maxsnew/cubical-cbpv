@@ -1,0 +1,29 @@
+A Simple Plan for representables.
+
+1. Yoneda embedding on objects: define (Yo A).ob B = Hom B A
+2. Yoneda Lemma:
+   For any presheaf P and object A,
+
+   there is a bijection between P A and Yo A -> P
+
+3. Simple Representability: Fix presheaf P, object A. The following data are equivalent
+   1. Yo A isomorphic to P
+   2. um ∈ P A and (not needed to be natural?) function I : P -> Yo A st I and um are an isomorphism.
+
+   The important part is that the naturality in the 2nd part is uniquely determined by the rest.
+   
+4. Parameterized Representability: Fix a profunctor R : C^o x D -> Set
+   and a function on objects G₀ : D₀ → C₀. The following are equivalent
+   1. G₀ extends to a functor G with C[ c , Gd ] ≡ R [ c , d ] natural in c^o x d.
+   2. For every d ∈ D₀. Yo (G₀ d) isomorphic to R [-, d ]
+   3. For every d ∈ D₀. um(d) ∈ R[ G₀ d , d ] and forall c, I : R[c , d] → C[ c , G₀ d ] s.t isomorphism
+
+5. Yoneda is a functor and the yoneda lemma isomorphism is natural. By 4,
+
+   Take G₀ = Yo : (C^o)₀ → (Psh(C)^o)₀
+   Take R : Psh(C) × C^o → Set := R P A = P A (obviously this is a functor)
+
+   Extending Yo to a functor with natural iso (Yo A) → P ≡ P A natural in P and A is equivalent by 4 to
+   constructing for every A ∈ C.
+   1. um(A) ∈ Yo A A = Hom(A,A) = id
+   2. I : P(A) -> Psh(C)(Yo A, P)
