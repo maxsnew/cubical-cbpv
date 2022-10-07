@@ -233,8 +233,11 @@ module Syntax {ℓ ℓ'} (T : Monad (SET ℓ')) (M : CBPV ℓ ℓ' T) where
   ret : ∀ {A} → Val A → Comp (F A)
   ret {A} = LeftRepresentable.η F-UMP A
 
-  bind : ∀ {A B} → (Val A → Comp B) → Stk (F A) B
-  bind = LeftRepresentable.Elim F-UMP
+  ext : ∀ {A B} → (Val A → Comp B) → Stk (F A) B
+  ext = LeftRepresentable.Elim F-UMP
+
+  bind : ∀ {A B} → Comp (F A) → (Val A → Comp B) → Comp B
+  bind M k = ext k [ M ]
 
   infixr 20 _⟶_
   _⟶_ : VTy → CTy → CTy
@@ -255,11 +258,31 @@ module Syntax {ℓ ℓ'} (T : Monad (SET ℓ')) (M : CBPV ℓ ℓ' T) where
   lam : ∀ {A B} → (Val A → Comp B) → Comp (A ⟶ B)
   lam {A}{B} M[x] = foo (RightRepresentable.Intro (ReprC 𝕋-preserves-𝕍-ℂ-powers) {c = ((Val A → Comp B) , isSet→ (snd ((Functor.F-ob ((ForgetEMAlgebra T) ∘F 𝕋) B))))}{d = A , B}  (λ x f → f x) M[x])
 
+  syntax lam (λ x → M) = ƛ x ⇒ M
+  _$_ = app
+  infixl 10 _$_
+
+  !_ = force
+
+  ⌈_⌉ : ∀ {B} → Comp B → Val (U B)
+  ⌈_⌉ = thunk
+
+  syntax bind M (λ x → N) = x <- M ؛ N
+
   internalApp : ∀ {A B} → Comp (U (A ⟶ B) ⟶ A ⟶ B)
-  internalApp = lam (λ f → lam (λ x → app (force f) x))
+  internalApp =
+    ƛ f ⇒ ƛ x ⇒ (! f $ x)
+    -- lam (λ f → lam (λ x → app (force f) x))
+  
 
   -- B^A is a retract of A then B has fpp
   mixedY : ∀ {A B} → Comp (U (U (A ⟶ B) ⟶ F A) ⟶ U (A ⟶ A ⟶ B) ⟶ U(U B ⟶ B) ⟶ B)
   mixedY = lam (λ enc → lam (λ dec → lam (λ f →
            let ω = (thunk (lam (λ x → app (force f) (thunk (app (app (force dec) x) x))))) in
-           bind (λ ω' → app (force ω) ω') [ app (force enc) ω ])))
+           ext (λ ω' → app (force ω) ω') [ app (force enc) ω ])))
+
+  mixedY' : ∀ {A B} → Comp (U (U (A ⟶ B) ⟶ F A) ⟶ U (A ⟶ A ⟶ B) ⟶ U(U B ⟶ B) ⟶ B)
+  mixedY' = ƛ enc ⇒ ƛ dec ⇒ ƛ f ⇒
+            let ω = ⌈ (ƛ x ⇒ (! f $ ⌈ ! dec $ x $ x ⌉ )) ⌉ in
+            ω' <- ! enc $ ω ؛
+            (! ω $ ω') 
